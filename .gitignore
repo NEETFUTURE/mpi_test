@@ -1,0 +1,7 @@
+data_mpi_test/*
+data_mpi_test_test/*
+data_1d/*
+*.BAK
+*.obj
+*.un~
+!.keep
