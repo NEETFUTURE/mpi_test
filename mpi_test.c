@@ -16,7 +16,7 @@
 int main(int argc, char **argv)
 {
     int n, k, myid, numprocs, i;
-    double recvbuf, sendbuf;
+    double recvbuf1, sendbuf1, recvbuf2, sendbuf2;
 
     double h[N];
     double e[N];
@@ -74,22 +74,21 @@ int main(int argc, char **argv)
 
         if (myid > 0)
         {
-            sendbuf = e[1];
-            MPI_Isend(&sendbuf, 1, MPI_DOUBLE, myid - 1, 0, MPI_COMM_WORLD, &req1);
-            MPI_Irecv(&recvbuf, 1, MPI_DOUBLE, myid - 1, 1, MPI_COMM_WORLD, &req1);
+            sendbuf1 = h[0];
+            MPI_Isend(&sendbuf1, 1, MPI_DOUBLE, myid - 1, 0, MPI_COMM_WORLD, &req1);
+            MPI_Irecv(&recvbuf1, 1, MPI_DOUBLE, myid - 1, 1, MPI_COMM_WORLD, &req1);
             MPI_Waitall(1,&req1, &stat1);
-            e[0] = recvbuf;
+            e[0] = recvbuf1;
         }
         if (myid < numprocs - 1)
         {
-            sendbuf = e[N - 2];
-            MPI_Isend(&sendbuf, 1, MPI_DOUBLE, myid + 1, 1, MPI_COMM_WORLD, &req2);
-            MPI_Irecv(&recvbuf, 1, MPI_DOUBLE, myid + 1, 0, MPI_COMM_WORLD, &req2);
+            sendbuf2 = e[N - 1];
+            MPI_Isend(&sendbuf2, 1, MPI_DOUBLE, myid + 1, 1, MPI_COMM_WORLD, &req2);
+            MPI_Irecv(&recvbuf2, 1, MPI_DOUBLE, myid + 1, 0, MPI_COMM_WORLD, &req2);
             MPI_Waitall(1,&req2, &stat2);
-            e[N - 1] = recvbuf;
+            h[N - 1] = recvbuf2;
         }
 
-        printf("LOOPING\n");
         MPI_Barrier(MPI_COMM_WORLD);
 
         if (myid == 1 && t < 0.5 / freq)
@@ -97,7 +96,7 @@ int main(int argc, char **argv)
             e[N / 2] = e[N / 2] + pow(sin(2.0 * PI * freq * t), 4);
         }
 
-        for (k = 1; k < N - 1; k++)
+        for (k = 1; k < N; k++)
         {
             e[k] = ec1 * e[k] + ec2 * (h[k] - h[k - 1]);
         }
