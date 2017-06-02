@@ -3,15 +3,36 @@
 #include <math.h>
 #include "mpi.h"
 
-#define N 100
-#define NSTEP 600
+#define N 30
+#define NSTEP 80
 #define UMU 1.257e-6
 #define EPS0 8.854e-12
 #define C 2.998e8
 #define SIGMA 0.0
 #define PI 3.141592
-#define freq 0.5e9
+#define freq 0.6e9
 #define STEP 1
+
+void write_to_file(double* e, FILE *fp_p, int myid){
+    int i;
+
+    if(myid == 0)
+    {
+        for (i = N-4; i < N; i++)
+        {
+            fprintf(fp_p,"%6.3f ",e[i]);
+        }
+        fprintf(fp_p,"\n");
+    }
+    else
+    {
+        for (i = 0; i < 4; i++)
+        {
+            fprintf(fp_p,"%6.3f ",e[i]);
+        }
+        fprintf(fp_p,"\n");
+    }
+}
 
 int main(int argc, char **argv)
 {
@@ -25,8 +46,10 @@ int main(int argc, char **argv)
     double dz = 1.0e-2;
 
     char filename[20];
+    char filename_p[20];
 
     MPI_File ffile;
+    FILE *fp_p;
 
     MPI_Request req1, req2;
     MPI_Status stat1, stat2;
@@ -35,7 +58,6 @@ int main(int argc, char **argv)
     MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
     MPI_Comm_rank(MPI_COMM_WORLD, &myid);
 
-    //printf("Program Start!\n");
 
     t = 0.0;
     dt = dz / C;
@@ -43,7 +65,6 @@ int main(int argc, char **argv)
     ec2 = -(dt / (EPS0 * dz) / (1.0 + SIGMA * dt / (2.0 * EPS0)));
     hc = -dt / (dz * UMU);
 
-    //printf("In rank%d,  ec1 = %f, ec2 = %f, hc = %f\n", myid,  ec1, ec2, hc);
 
     for (i = 0; i < N; i++)
     {
@@ -52,12 +73,17 @@ int main(int argc, char **argv)
     }
 
 
+    sprintf(filename_p, "data_mpi_test_p/data_%d.txt", myid);
+    fp_p = fopen(filename_p, "w");
+
     for (n = 0; n < NSTEP; n++)
     {
 
 
         // ファイルの保存
         sprintf(filename, "data_mpi_test/data%05d.raw", n);
+
+        write_to_file(e, fp_p, myid);
 
         MPI_File_open(
             MPI_COMM_WORLD, filename,
@@ -89,11 +115,13 @@ int main(int argc, char **argv)
             e[0] = recvbuf1;
         }
 
+        write_to_file(e, fp_p, myid);
+
         MPI_Barrier(MPI_COMM_WORLD);
 
-        if (myid == 1 && t < 0.5 / freq)
+        if (myid == 0 && t < 0.5 / freq)
         {
-            e[N / 2] = e[N / 2] + pow(sin(2.0 * PI * freq * t), 4);
+            e[N/2] = e[N/2] + pow(sin(2.0 * PI * freq * t), 4);
         }
 
         for (k = 1; k < N; k++)
@@ -109,9 +137,13 @@ int main(int argc, char **argv)
         }
 
         t = t + dt / 2.0;
+
+        write_to_file(e, fp_p, myid);
+        fprintf(fp_p, "\n");
     }
 
     MPI_File_close(&ffile);
+    fclose(fp_p);
 
     MPI_Finalize();
 }
