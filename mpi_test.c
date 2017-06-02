@@ -72,21 +72,21 @@ int main(int argc, char **argv)
         MPI_File_write(ffile, e, N-1, MPI_DOUBLE, MPI_STATUS_IGNORE);
         // ファイルの保存 END
 
-        if (myid > 0)
-        {
-            sendbuf1 = h[0];
-            MPI_Isend(&sendbuf1, 1, MPI_DOUBLE, myid - 1, 0, MPI_COMM_WORLD, &req1);
-            MPI_Irecv(&recvbuf1, 1, MPI_DOUBLE, myid - 1, 1, MPI_COMM_WORLD, &req1);
-            MPI_Waitall(1,&req1, &stat1);
-            e[0] = recvbuf1;
-        }
-        if (myid < numprocs - 1)
+        if (myid == 0)
         {
             sendbuf2 = e[N - 1];
-            MPI_Isend(&sendbuf2, 1, MPI_DOUBLE, myid + 1, 1, MPI_COMM_WORLD, &req2);
-            MPI_Irecv(&recvbuf2, 1, MPI_DOUBLE, myid + 1, 0, MPI_COMM_WORLD, &req2);
-            MPI_Waitall(1,&req2, &stat2);
+            MPI_Isend(&sendbuf2, 1, MPI_DOUBLE, 1, 0, MPI_COMM_WORLD, &req1);
+            MPI_Irecv(&recvbuf2, 1, MPI_DOUBLE, 1, 1, MPI_COMM_WORLD, &req1);
+            MPI_Waitall(1,&req1, &stat1);
             h[N - 1] = recvbuf2;
+        }
+        if (myid == 1)
+        {
+            sendbuf1 = h[0];
+            MPI_Isend(&sendbuf1, 1, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD, &req2);
+            MPI_Irecv(&recvbuf1, 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, &req2);
+            MPI_Waitall(1,&req2, &stat2);
+            e[0] = recvbuf1;
         }
 
         MPI_Barrier(MPI_COMM_WORLD);
