@@ -13,14 +13,19 @@
 #define freq 0.6e9
 #define STEP 1
 
-void write_to_file(double* e, FILE *fp_p, int myid){
+void write_to_file(double* e, double* h, FILE *fp_p, int myid){
     int i;
 
     if(myid == 0)
     {
         for (i = N-4; i < N; i++)
         {
-            fprintf(fp_p,"%6.3f ",e[i]);
+            fprintf(fp_p,"%9.7f        ",e[i]);
+        }
+        fprintf(fp_p,"\n");
+        for (i = N-4; i < N; i++)
+        {
+            fprintf(fp_p,"        %9.7f",h[i]);
         }
         fprintf(fp_p,"\n");
     }
@@ -28,7 +33,12 @@ void write_to_file(double* e, FILE *fp_p, int myid){
     {
         for (i = 0; i < 4; i++)
         {
-            fprintf(fp_p,"%6.3f ",e[i]);
+            fprintf(fp_p,"%9.7f        ",e[i]);
+        }
+        fprintf(fp_p,"\n");
+        for (i = 0; i < 4; i++)
+        {
+            fprintf(fp_p,"        %9.7f",h[i]);
         }
         fprintf(fp_p,"\n");
     }
@@ -83,7 +93,7 @@ int main(int argc, char **argv)
         // ファイルの保存
         sprintf(filename, "data_mpi_test/data%05d.raw", n);
 
-        write_to_file(e, fp_p, myid);
+        write_to_file(e, h, fp_p, myid);
 
         MPI_File_open(
             MPI_COMM_WORLD, filename,
@@ -98,26 +108,7 @@ int main(int argc, char **argv)
         MPI_File_write(ffile, e, N-1, MPI_DOUBLE, MPI_STATUS_IGNORE);
         // ファイルの保存 END
 
-        if (myid == 0)
-        {
-            sendbuf2 = e[N - 1];
-            MPI_Isend(&sendbuf2, 1, MPI_DOUBLE, 1, 0, MPI_COMM_WORLD, &req1);
-            MPI_Irecv(&recvbuf2, 1, MPI_DOUBLE, 1, 1, MPI_COMM_WORLD, &req1);
-            MPI_Waitall(1,&req1, &stat1);
-            h[N - 1] = recvbuf2;
-        }
-        if (myid == 1)
-        {
-            sendbuf1 = h[0];
-            MPI_Isend(&sendbuf1, 1, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD, &req2);
-            MPI_Irecv(&recvbuf1, 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, &req2);
-            MPI_Waitall(1,&req2, &stat2);
-            e[0] = recvbuf1;
-        }
-
-        write_to_file(e, fp_p, myid);
-
-        MPI_Barrier(MPI_COMM_WORLD);
+        // ******************* 計算 *********************
 
         if (myid == 0 && t < 0.5 / freq)
         {
@@ -138,8 +129,37 @@ int main(int argc, char **argv)
 
         t = t + dt / 2.0;
 
-        write_to_file(e, fp_p, myid);
-        fprintf(fp_p, "\n");
+        write_to_file(e, h, fp_p, myid);
+
+        // ******************* 通信 *********************
+
+        if (myid == 0)
+        {
+            sendbuf2 = e[N - 1];
+            MPI_Isend(&sendbuf2, 1, MPI_DOUBLE, 1, 0, MPI_COMM_WORLD, &req1);
+            MPI_Irecv(&recvbuf2, 1, MPI_DOUBLE, 1, 1, MPI_COMM_WORLD, &req1);
+            MPI_Waitall(1,&req1, &stat1);
+            h[N - 1] = recvbuf2;
+            fprintf(fp_p,"sendbuf2 = e[N - 1] = %9.7f\n",e[N - 1]);
+            fprintf(fp_p,"h[N - 1] = recvbuf2 = %9.7f\n",h[N - 1]);
+        }
+        if (myid == 1)
+        {
+            sendbuf1 = h[0];
+            MPI_Isend(&sendbuf1, 1, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD, &req2);
+            MPI_Irecv(&recvbuf1, 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, &req2);
+            MPI_Waitall(1,&req2, &stat2);
+            e[0] = recvbuf1;
+            fprintf(fp_p,"sendbuf1 = h[0] = %9.7f\n",h[0]);
+            fprintf(fp_p,"e[0] = recvbuf1 = %9.7f\n",e[0]);
+        }
+
+        write_to_file(e, h, fp_p, myid);
+
+        MPI_Barrier(MPI_COMM_WORLD);
+
+
+        fprintf(fp_p, "n=%04d**************************************************************\n",n);
     }
 
     MPI_File_close(&ffile);
