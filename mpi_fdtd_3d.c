@@ -13,34 +13,35 @@
 #define freq 0.6e9
 #define STEP 1
 
-void write_to_file(double* e, double* h, FILE *fp_p, int myid){
+void write_to_file(double *e, double *h, FILE *fp_p, int myid)
+{
     int i;
 
-    if(myid == 0)
+    if (myid == 0)
     {
-        for (i = N-4; i < N; i++)
+        for (i = N - 4; i < N; i++)
         {
-            fprintf(fp_p,"%9.7f        ",e[i]);
+            fprintf(fp_p, "%9.7f        ", e[i]);
         }
-        fprintf(fp_p,"\n");
-        for (i = N-4; i < N; i++)
+        fprintf(fp_p, "\n");
+        for (i = N - 4; i < N; i++)
         {
-            fprintf(fp_p,"        %9.7f",h[i]);
+            fprintf(fp_p, "        %9.7f", h[i]);
         }
-        fprintf(fp_p,"\n");
+        fprintf(fp_p, "\n");
     }
     else
     {
         for (i = 0; i < 4; i++)
         {
-            fprintf(fp_p,"%9.7f        ",e[i]);
+            fprintf(fp_p, "%9.7f        ", e[i]);
         }
-        fprintf(fp_p,"\n");
+        fprintf(fp_p, "\n");
         for (i = 0; i < 4; i++)
         {
-            fprintf(fp_p,"        %9.7f",h[i]);
+            fprintf(fp_p, "        %9.7f", h[i]);
         }
-        fprintf(fp_p,"\n");
+        fprintf(fp_p, "\n");
     }
 }
 

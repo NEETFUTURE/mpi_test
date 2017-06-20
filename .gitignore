@@ -1,6 +1,7 @@
 data_mpi_test/*
 data_mpi_test_test/*
 data_1d/*
+data_3d/*
 *.BAK
 *.obj
 *.un~
