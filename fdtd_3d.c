@@ -76,8 +76,8 @@ int main(int argc, char **argv)
         // ******************* 電界の計算 *********************
         if (t < 0.5 / freq)
         {
-            ex[TRGT_X*NX*NY + TRGT_Y*NX + TRGT_Z] = ex[TRGT_X*NX*NY + TRGT_Y*NX + TRGT_Z] + pow(sin(2.0 * PI * freq * (t+dz*i/C)), 4);
-            printf("%9.7f\n", pow(sin(2.0 * PI * freq * (t+dz*i/C)), 4));
+            ex[TRGT_X*NX*NY + TRGT_Y*NX + TRGT_Z] = 
+                ex[TRGT_X*NX*NY + TRGT_Y*NX + TRGT_Z] + pow(sin(2.0 * PI * freq * t), 4);
         }
 
         for (i = 0; i < NX; i++)
